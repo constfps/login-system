@@ -28,13 +28,25 @@ LoginScreen {
     max-width: 8;
 }
 
-#home_header {
+Header {
     align: right middle;
     background: $boost;
     height: 1;
+    dock: top;
+}
+
+#home_buttons {
+    grid-size: 2 2;
+    height: 15;
+    width: 75;
+}
+
+#home_buttons>* {
+    height: 100%;
+    width: 100%;
 }
 
 /*For screens*/
-.absolute_center {
+Screen {
     align: center middle;
 }

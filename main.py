@@ -8,7 +8,7 @@ from textual import on
 from textual.events import Key
 from textual.app import App, ComposeResult
 from textual.screen import Screen
-from textual.containers import HorizontalGroup, Horizontal
+from textual.containers import HorizontalGroup, Horizontal, Grid
 from textual.widgets import Input, Button, Label
 
 import os
@@ -49,20 +49,35 @@ class ErrorScreen(Screen):
         yield error_label
         yield any_key
 
+class Header(Horizontal):
+    def __init__(self, user: user):
+        self.current_user = user
+        user_indicator = Label(f"Logged in as {self.current_user.first_name} {self.current_user.last_name}".strip(), id="current_user")
+        logout = Button("Logout", variant="error", id="logout", compact=True)
+
+        super().__init__(user_indicator, logout)
+
+    @on(Button.Pressed, "#logout")
+    def logout(self):
+        self.parent.parent.switch_screen(LoginScreen(self.current_user))
+
 class HomeScreen(Screen):
     def __init__(self, current_user: user, name = None, id = None, classes = None):
         self.current_user = current_user
         super().__init__(name, id, classes)
     
     def compose(self):
-        user_indicator = Label(f"Logged in as {self.current_user.first_name} {self.current_user.last_name}".strip(), id="current_user")
-        logout = Button("Logout", variant="error", id="logout", compact=True)
-        header = Horizontal(user_indicator, logout, id="home_header")
+        header = Header(self.current_user)
         yield header
-    
-    @on(Button.Pressed, "#logout")
-    def logout(self):
-        self.parent.switch_screen(LoginScreen())
+
+        home_buttons = Grid(
+            Button("Create user", variant="success").focus(),
+            Button("Find user", variant="primary"),
+            Button("Modify user", variant="warning"),
+            Button("Delete user", variant="error"),
+            id="home_buttons"
+        )
+        yield home_buttons
 
 class LoginScreen(Screen):
     class UsernameField(HorizontalGroup):
@@ -104,7 +119,7 @@ class LoginScreen(Screen):
                 self.parent.switch_screen(HomeScreen(user))
                 break
         else:
-            await self.mount(Label("Invalid Credentials", id="login_callback"))
+            self.set_timer(1, lambda: self.mount(Label("Invalid Credentials", id="login_callback"))) 
 
 class MainApp(App):
     theme = "textual-dark"
@@ -112,10 +127,10 @@ class MainApp(App):
 
     def on_mount(self) -> None:
         if not os.path.exists("users.dat"):
-            self.push_screen(ErrorScreen("ERROR: 'users.dat' file not found. Was the starter program ran?", classes="absolute_center"))
+            self.push_screen(ErrorScreen("ERROR: 'users.dat' file not found. Was the starter program ran?"))
         else:
             load_dotenv()
-            self.push_screen(LoginScreen(classes="absolute_center"))
+            self.push_screen(LoginScreen())
 
 if __name__ == "__main__":
     app = MainApp()
