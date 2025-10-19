@@ -1,0 +1,23 @@
+UsernameField {
+    width: 50;
+    margin-bottom: 1;
+}
+
+PasswordField {
+    width: 50;
+}
+
+Login {
+    content-align: center middle;
+    align: center middle;
+}
+
+#login {
+    position: relative;
+    offset-x: 17;
+    margin-top: 2;
+}
+
+Screen {
+    align: center middle;
+}
