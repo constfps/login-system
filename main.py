@@ -8,7 +8,7 @@ from textual import on
 from textual.events import Key
 from textual.app import App, ComposeResult
 from textual.screen import Screen
-from textual.containers import HorizontalGroup, Horizontal, Grid
+from textual.containers import HorizontalGroup, Horizontal, Grid, CenterMiddle
 from textual.widgets import Input, Button, Label
 
 import os
@@ -61,45 +61,90 @@ class Header(Horizontal):
     def logout(self):
         self.parent.parent.switch_screen(LoginScreen(self.current_user))
 
+class FirstNameField(HorizontalGroup):
+    def compose(self):
+        _input = Input(id=f"fname_input", compact=True)
+        _input.action_submit = lambda: self.parent.query_one("#lname_input").focus()
+
+        yield Label("First Name:", id="fname_label")
+        yield _input.focus()
+
+class LastNameField(HorizontalGroup):
+    def compose(self):
+        _input = Input(id=f"lname_input", compact=True)
+        _input.action_submit = lambda: self.parent.query_one("#username_input").focus()
+
+        yield Label("Last Name:", id="lname_label")
+        yield _input
+
+class UsernameField(HorizontalGroup):
+    def compose(self):
+        _input = Input(id="username_input", compact=True)
+        _input.action_submit = lambda: self.parent.query_one("#password_input").focus()
+        
+        yield Label("Username:", id="username_label") 
+        yield _input
+
+class PasswordField(HorizontalGroup):
+    def compose(self):
+        _input = Input(id="password_input", password=True, compact=True)
+        _input.action_submit = lambda: self.parent.query_one("Button").press()
+        
+        yield Label("Password:", id="password_label")
+        yield _input
+
+class UserCreateScreen(Screen):
+    def __init__(self, current_user: user, name = None, id = None, classes = None):
+        self.current_user = current_user
+        super().__init__(name, id, classes)
+    
+    def compose(self):
+        yield Header(self.current_user)
+        yield CenterMiddle(
+            FirstNameField(),
+            LastNameField(),
+            UsernameField(),
+            PasswordField(),
+            Horizontal(
+                Button("Submit", variant="success", id="submit_create"),
+                Button("Cancel", variant="error", id="cancel_create"),
+                id="buttons"
+            )
+        )
+    
+    @on(Button.Pressed, "#cancel_create")
+    def cancel(self):
+        self.parent.switch_screen(HomeScreen(self.current_user))
+
 class HomeScreen(Screen):
     def __init__(self, current_user: user, name = None, id = None, classes = None):
         self.current_user = current_user
         super().__init__(name, id, classes)
     
     def compose(self):
-        header = Header(self.current_user)
-        yield header
-
+        yield Header(self.current_user)
         home_buttons = Grid(
-            Button("Create user", variant="success").focus(),
-            Button("Find user", variant="primary"),
-            Button("Modify user", variant="warning"),
-            Button("Delete user", variant="error"),
+            Button("Create user", id="create", variant="success", compact=True).focus(),
+            Button("Find user", id="find", variant="primary", compact=True),
+            Button("Modify user", id="modify", variant="warning", compact=True),
+            Button("Delete user", id="delete", variant="error", compact=True),
+            Button("Export users", id="export", compact=True),
+            Button("About", id="about", compact=True),
             id="home_buttons"
         )
         yield home_buttons
+    
+    @on(Button.Pressed, "#create")
+    def create_user(self):
+        self.parent.switch_screen(UserCreateScreen(self.current_user))
 
 class LoginScreen(Screen):
-    class UsernameField(HorizontalGroup):
-        def compose(self):
-            _input = Input(id="username_input", compact=True)
-            _input.action_submit = lambda: self.parent.query_one("#password_input").focus()
-            
-            yield Label("Username:", id="username_label") 
-            yield _input
-
-    class PasswordField(HorizontalGroup):
-        def compose(self):
-            _input = Input(id="password_input", password=True, compact=True)
-            _input.action_submit = lambda: self.parent.query_one("#login").press()
-            
-            yield Label("Password:", id="password_label")
-            yield _input
-
     def compose(self):
-        yield self.UsernameField()
-        yield self.PasswordField()
-        yield Button("Login", variant="success", id="login")
+        yield CenterMiddle(
+            UsernameField(),
+            PasswordField(),
+            Button("Login", variant="success", id="login")
+        )
     
     @on(Button.Pressed, "#login")
     async def login(self):

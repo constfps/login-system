@@ -1,21 +1,12 @@
-/*Login Page*/
-UsernameField {
+/*Login Screen*/
+LoginScreen>CenterMiddle {
     width: 50;
     margin-bottom: 1;
 }
 
-PasswordField {
-    width: 50;
-}
-
-LoginScreen {
-    align: center middle;
-}
-
 #login {
-    position: relative;
-    offset-x: 17;
     margin-top: 2;
+    width: 50;
 }
 
 /*Home Screen*/
@@ -36,14 +27,39 @@ Header {
 }
 
 #home_buttons {
-    grid-size: 2 2;
-    height: 15;
-    width: 75;
+    grid-size: 3 2;
+    height: 50%;
+    width: 80%;
 }
 
 #home_buttons>* {
     height: 100%;
     width: 100%;
+}
+
+#export {
+    background: khaki;
+    color: black;
+}
+
+/*Create user screen*/
+UserCreateScreen>CenterMiddle {
+    align: center middle;
+}
+
+HorizontalGroup {
+    width: 50;
+    margin-bottom: 1;
+}
+
+UserCreateScreen>CenterMiddle>Horizontal {
+    width: 50;
+    align: center middle;
+    height: auto;
+}
+
+UserCreateScreen>CenterMiddle>Horizontal>* {
+    margin: 1;
 }
 
 /*For screens*/
