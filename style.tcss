@@ -1,3 +1,22 @@
+/*First Time Launch Screen*/
+FirstTimeScreen>CenterMiddle>Label {
+    width: auto;
+}
+
+FirstTimeScreen>CenterMiddle>* {
+    margin: 3;
+}
+
+FirstTimeScreen>CenterMiddle>Horizontal {
+    width: 100%;
+    height: auto;
+    align: center middle;
+}
+
+#firsttime_yes {
+    margin-right: 2;
+}
+
 /*Login Screen*/
 LoginScreen>CenterMiddle {
     width: 50;
@@ -42,6 +61,14 @@ Header {
     color: black;
 }
 
+/*Error modal*/
+ModalScreen>Label {
+    width: 50;
+    height: auto;
+    background: $boost;
+    content-align: center middle;
+}
+
 /*Create user screen*/
 UserCreateScreen>CenterMiddle {
     align: center middle;
@@ -62,7 +89,12 @@ UserCreateScreen>CenterMiddle>Horizontal>* {
     margin: 1;
 }
 
-/*For screens*/
+/*Wildcard classes*/
 Screen {
     align: center middle;
+}
+
+CenterMiddle {
+    width: auto;
+    height: auto;
 }

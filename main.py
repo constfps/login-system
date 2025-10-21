@@ -7,14 +7,14 @@ from dotenv import load_dotenv
 from textual import on
 from textual.events import Key
 from textual.app import App, ComposeResult
-from textual.screen import Screen
+from textual.screen import Screen, ModalScreen
 from textual.containers import HorizontalGroup, Horizontal, Grid, CenterMiddle
 from textual.widgets import Input, Button, Label
 
 import os
 
 class user:
-    def __init__(self, username: str, password: str, first_name: str, last_name: str):
+    def __init__(self, username: str, password: str, first_name: str, last_name: str = ""):
         self.username = username
         self.password = hashlib.sha256(password.encode()).digest()
         self.first_name = first_name
@@ -29,25 +29,9 @@ class user:
             "last_name": self.last_name,
             "id": self.id
         }
-
-class ErrorScreen(Screen):
-    def __init__(self, error_msg: str, name = None, id = None, classes = None):
-        self.error_msg = error_msg
-        super().__init__(name, id, classes)
-        self.styles.align = ("center", "middle")
     
-    @on(Key)
-    def quit(self):
-        self.parent.exit()
-    
-    def compose(self) -> ComposeResult:
-        error_label = Label(self.error_msg, variant="error")
-        error_label.styles.border = ("tall", "red")
-
-        any_key = Label("Press any key to exit")
-        
-        yield error_label
-        yield any_key
+    def __str__(self):
+        return f"First Name: {self.first_name} Last Name: {self.last_name}"
 
 class Header(Horizontal):
     def __init__(self, user: user):
@@ -93,13 +77,29 @@ class PasswordField(HorizontalGroup):
         yield Label("Password:", id="password_label")
         yield _input
 
+class ErrorModal(ModalScreen):
+    def __init__(self, message: str = "An error has occured.", name = None, id = None, classes = None):
+        self.message = message
+        super().__init__(name, id, classes)
+    
+    BINDINGS = [("q", "clear", "Clear modal")]
+    
+    def compose(self):
+        yield Label(self.message + "\n")
+        yield Label("Press any key to clear")
+    
+    @on(Key)
+    def clear(self):
+        self.app.pop_screen()
+
 class UserCreateScreen(Screen):
-    def __init__(self, current_user: user, name = None, id = None, classes = None):
+    def __init__(self, current_user: user = None, name = None, id = None, classes = None):
         self.current_user = current_user
         super().__init__(name, id, classes)
     
     def compose(self):
-        yield Header(self.current_user)
+        if self.current_user:
+            yield Header(self.current_user)
         yield CenterMiddle(
             FirstNameField(),
             LastNameField(),
@@ -114,7 +114,62 @@ class UserCreateScreen(Screen):
     
     @on(Button.Pressed, "#cancel_create")
     def cancel(self):
-        self.parent.switch_screen(HomeScreen(self.current_user))
+        if self.current_user:
+            self.app.switch_screen(HomeScreen(self.current_user))
+        else:
+            self.app.exit()
+    
+    @on(Button.Pressed, "#submit_create")
+    def submit(self):
+        fname = self.query_one("#fname_input").value.strip()
+        lname = self.query_one("#lname_input").value.strip()
+        username = self.query_one("#username_input").value.strip()
+        password = self.query_one("#password_input").value.strip()
+        
+        for data in [fname, username, password]:
+            if not data:
+                self.app.push_screen(ErrorModal("One or more required fields are empty. Please verify and try again."))
+                break
+        else:
+            if self.current_user:
+                key = os.getenv("KEY")
+                with open("users.dat", "rb") as file:
+                    users = list(pickle.loads(Fernet(key).decrypt(pickle.loads(file.read()))))
+
+                users.append(user(username, password, fname, lname))
+                with open("users.dat", "wb") as file:
+                    pickle.dump(Fernet(key).encrypt(pickle.dumps(users)), file)
+
+                self.app.switch_screen(HomeScreen(self.current_user))
+            else:
+                key = Fernet.generate_key().decode()
+                with open(".env", "w") as file:
+                    file.write(f"KEY={key}")
+
+                with open("users.dat", "wb") as file:
+                    pickle.dump(Fernet(key).encrypt(pickle.dumps([user(username, password, fname, lname)])), file)
+                
+                self.app.switch_screen(LoginScreen())
+            self.app.push_screen(ErrorModal("User successfully added!"))
+
+class FirstTimeScreen(Screen):
+    def compose(self):
+        yield CenterMiddle(
+            Label("users.dat and/or .env file not found. Looks like this is your first time running this program"),
+            Label("Would you like to make a new user?"),
+            Horizontal(
+                Button("Yes", variant="success", id="firsttime_yes"),
+                Button("No", variant="error", id="firsttime_no")
+            )
+        )
+    
+    @on(Button.Pressed, "#firsttime_yes")
+    def create(self):
+        self.app.switch_screen(UserCreateScreen())
+
+    @on(Button.Pressed, "#firsttime_no")
+    def quit(self):
+        self.app.exit()
 
 class HomeScreen(Screen):
     def __init__(self, current_user: user, name = None, id = None, classes = None):
@@ -136,7 +191,7 @@ class HomeScreen(Screen):
     
     @on(Button.Pressed, "#create")
     def create_user(self):
-        self.parent.switch_screen(UserCreateScreen(self.current_user))
+        self.app.switch_screen(UserCreateScreen(self.current_user))
 
 class LoginScreen(Screen):
     def compose(self):
@@ -153,6 +208,7 @@ class LoginScreen(Screen):
         except:
             pass
 
+        load_dotenv()
         with open("users.dat", "rb") as file:
             users = pickle.loads(Fernet(os.getenv("KEY")).decrypt(pickle.loads(file.read())))
 
@@ -161,7 +217,7 @@ class LoginScreen(Screen):
         
         for user in users:
             if user.username == username and user.password == hashlib.sha256(password.encode()).digest():
-                self.parent.switch_screen(HomeScreen(user))
+                self.app.switch_screen(HomeScreen(user))
                 break
         else:
             self.set_timer(1, lambda: self.mount(Label("Invalid Credentials", id="login_callback"))) 
@@ -172,9 +228,10 @@ class MainApp(App):
 
     def on_mount(self) -> None:
         if not os.path.exists("users.dat"):
-            self.push_screen(ErrorScreen("ERROR: 'users.dat' file not found. Was the starter program ran?"))
+            self.push_screen(FirstTimeScreen())
+        elif not os.path.exists(".env"):
+            self.push_screen(FirstTimeScreen())
         else:
-            load_dotenv()
             self.push_screen(LoginScreen())
 
 if __name__ == "__main__":
