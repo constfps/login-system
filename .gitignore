@@ -1,4 +1,4 @@
 .env
-users.dat
+users.*
 .venv/
 *cache*
