@@ -5,7 +5,7 @@ import uuid
 REQUIRED_INDICATOR = "\033[31m*\033[0m"
 
 
-def input_required(prompt: str, disallow_duplicates: bool = False) -> str:
+def input_required(prompt: str, disallow_duplicates: bool = False, number: bool = False) -> str:
     while True:
         answer = input(REQUIRED_INDICATOR + prompt).strip()
         if not answer:
@@ -19,6 +19,11 @@ def input_required(prompt: str, disallow_duplicates: bool = False) -> str:
                             break
                     else:
                         return answer
+            elif number:
+                try:
+                    return int(answer)
+                except ValueError:
+                    print("Input must be a number")
             else:
                 return answer
 
@@ -86,7 +91,7 @@ def find_user(username: str = None):
 
 def modify_user():
     while True:
-        username = input_required("Enter username to modify (Press enter to exit): ")
+        username = input("Enter username to modify (Press enter to exit): ")
         if username:
             user = find_user(username)
             if user:
@@ -98,7 +103,7 @@ def modify_user():
                         "Select a parameter to modify (Press enter to exit): "
                     )
                     if option:
-                        replacement = input_required(f"Enter a {options[option-1]} to replace the current one: ")
+                        replacement = input_required(f"Enter a {options[option-1]} to replace the current one: ", number=True)
                         if replacement:
                             modified_user = user
                             modified_user.update({options[option-1].lower().replace(" ", "_"): replacement})
@@ -112,6 +117,24 @@ def modify_user():
                         break
             else:
                 print("User not found. Please try again.")
+        else:
+            break
+
+
+def remove_user():
+    while True:
+        username = input("Enter username to delete (press Enter to exit): ")
+        if username:
+            user = find_user(username)
+            if user:
+                with open("users.json", "r+") as file:
+                    users = list(json.load(file))
+                    users.remove(user)
+                print("User successfully removed.")
+            else:
+                print("User not found.")
+        else:
+            break
 
 
 if not os.path.exists("users.json"):
@@ -150,11 +173,7 @@ while True:
     print("4. Remove user")
     print("5. Exit")
 
-    try:
-        selected = int(input_required("Answer: "))
-    except ValueError:
-        print("Invalid input. Please try again.\n")
-        continue
+    selected = input_required("Answer: ", number=True)
 
     if selected == 5:
         exit()
