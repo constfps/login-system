@@ -7,7 +7,7 @@ REQUIRED_INDICATOR = "\033[31m*\033[0m"
 
 def input_required(prompt: str, disallow_duplicates: bool = False) -> str:
     while True:
-        answer = input(prompt)
+        answer = input(REQUIRED_INDICATOR + prompt).strip()
         if not answer:
             print("This field is required. Please try again.")
         else:
@@ -24,10 +24,10 @@ def input_required(prompt: str, disallow_duplicates: bool = False) -> str:
 
 
 def create_user() -> dict:
-    fname = input_required(f"{REQUIRED_INDICATOR}First Name: ")
+    fname = input_required("First Name: ")
     lname = input("Last Name: ")
-    username = input_required(f"{REQUIRED_INDICATOR}Username: ")
-    password = input_required(f"{REQUIRED_INDICATOR}Password: ")
+    username = input_required("Username: ")
+    password = input_required("Password: ")
 
     with open("users.json", "w") as file:
         data = {
@@ -35,7 +35,7 @@ def create_user() -> dict:
             "last_name": lname,
             "username": username,
             "password": password,
-            "id": str(uuid.uuid4())
+            "id": str(uuid.uuid4()),
         }
         file.write(json.dumps([data], indent=4))
         return data
@@ -45,7 +45,12 @@ def login(username: str, password: str) -> bool:
     with open("users.json", "r") as file:
         for user in list(json.load(file)):
             if user.get("username") == username and user.get("password") == password:
-                print((f"Welcome, {user.get("first_name")} {user.get("last_name")}").strip())
+                print(
+                    (
+                        f"Welcome, {user.get("first_name")} {
+                            user.get("last_name")}"
+                    ).strip()
+                )
                 break
         else:
             return False
@@ -53,9 +58,11 @@ def login(username: str, password: str) -> bool:
 
 
 def find_user(username: str = None):
-    if username:
+    if not username:
         while True:
-            username = input_required("Enter username to search for (Press enter to exit): ").strip()
+            username = input_required(
+                "Enter username to search for (Press enter to exit): "
+            ).strip()
             if username:
                 with open("users.json", "r") as file:
                     for user in list(json.load(file)):
@@ -83,7 +90,26 @@ def modify_user():
         if username:
             user = find_user(username)
             if user:
-                pass
+                while True:
+                    options = ["First Name", "Last Name", "Username", "Password"]
+                    for i in range(len(options)):
+                        print(f"{i+1}. {options[i]}")
+                    option = input_required(
+                        "Select a parameter to modify (Press enter to exit): "
+                    )
+                    if option:
+                        replacement = input_required(f"Enter a {options[option-1]} to replace the current one: ")
+                        if replacement:
+                            modified_user = user
+                            modified_user.update({options[option-1].lower().replace(" ", "_"): replacement})
+                            with open("users.json", "r+") as file:
+                                users = list(json.load(file))
+                                users.remove(user)
+                                users.append(modified_user)
+                        else:
+                            break
+                    else:
+                        break
             else:
                 print("User not found. Please try again.")
 
@@ -137,3 +163,5 @@ while True:
         create_user()
     elif selected == 2:
         find_user()
+    elif selected == 3:
+        modify_user()
