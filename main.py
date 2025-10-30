@@ -5,7 +5,9 @@ import uuid
 REQUIRED_INDICATOR = "\033[31m*\033[0m"
 
 
-def input_required(prompt: str, disallow_duplicates: bool = False, number: bool = False) -> str:
+def input_required(
+    prompt: str, disallow_duplicates: bool = False, number: bool = False
+) -> str:
     while True:
         answer = input(REQUIRED_INDICATOR + prompt).strip()
         if not answer:
@@ -103,10 +105,20 @@ def modify_user():
                         "Select a parameter to modify (Press enter to exit): "
                     )
                     if option:
-                        replacement = input_required(f"Enter a {options[option-1]} to replace the current one: ", number=True)
+                        replacement = input_required(
+                            f"Enter a {options[option-1]
+                                       } to replace the current one: ",
+                            number=True,
+                        )
                         if replacement:
                             modified_user = user
-                            modified_user.update({options[option-1].lower().replace(" ", "_"): replacement})
+                            modified_user.update(
+                                {
+                                    options[option - 1]
+                                    .lower()
+                                    .replace(" ", "_"): replacement
+                                }
+                            )
                             with open("users.json", "r+") as file:
                                 users = list(json.load(file))
                                 users.remove(user)
@@ -123,6 +135,12 @@ def modify_user():
 
 def remove_user():
     while True:
+        with open("users.json", "r") as file:
+            if len(list(json.load(file))) <= 1:
+                print(
+                    "1 user remaining in the list. Logout and delete 'users.json' file to delete"
+                )
+                break
         username = input("Enter username to delete (press Enter to exit): ")
         if username:
             user = find_user(username)
@@ -176,7 +194,7 @@ while True:
     selected = input_required("Answer: ", number=True)
 
     if selected == 5:
-        exit()
+        break
     elif selected == 1:
         print("Enter the new user's information")
         create_user()
@@ -184,3 +202,7 @@ while True:
         find_user()
     elif selected == 3:
         modify_user()
+    elif selected == 4:
+        remove_user()
+    else:
+        print("Input out of range.")
