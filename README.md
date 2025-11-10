@@ -4,9 +4,10 @@ To-Do List:
 - [x] Prevent user from deleting if only one user is in the list
 - [x] Comments
 - [ ] Search by uuid (maybe)
+- [ ] Colored text
 - [ ] Minimum password complexity requirement
 - [ ] CSV Export
-- [ ] Password hashing
+- [x] Password hashing
 - [ ] Encryption and serialization (maybe)
 - [ ] User class (maybe)
 - [ ] Actually testing the code lmao

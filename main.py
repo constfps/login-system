@@ -1,8 +1,9 @@
 import json
 import os
 import uuid
+from hashlib import sha256
 
-# A red asterisk with some ANSI bs
+# A red asterisk using ANSI escape codes
 REQUIRED_INDICATOR = "\033[31m*\033[0m"
 
 
@@ -41,7 +42,7 @@ def create_user() -> dict:
     # Ask for info
     fname = input_required("First Name: ").strip()
     lname = input("Last Name: ").strip()
-    username = input_required("Username: ", disallow_duplicates=True).strip()
+    username = input_required("Username: ").strip()
     password = input_required("Password: ").strip()
 
     # Open users.json in write mode
@@ -51,7 +52,7 @@ def create_user() -> dict:
             "first_name": fname,
             "last_name": lname,
             "username": username,
-            "password": password,
+            "password": sha256(password.encode()).hexdigest(),
             "id": str(uuid.uuid4()),
         }
 
@@ -69,7 +70,7 @@ def login(username: str, password: str) -> bool:
         # Iterate over entire list
         for user in list(json.load(file)):
             # If username and password match is found, print greet msg
-            if user.get("username") == username and user.get("password") == password:
+            if user.get("username") == username and user.get("password") == sha256(password.encode()).hexdigest():
                 print(
                     (
                         f"Welcome, {user.get("first_name")} {
@@ -200,7 +201,7 @@ def modify_user():
 # For removing user(s)
 def remove_user():
     while True:
-        # Check if theres one user in users list
+        # Check if there's one user in users list
         with open("users.json", "r") as file:
             if len(list(json.load(file))) <= 1:
                 print(
@@ -247,6 +248,7 @@ else:
             json.load(file)
     except json.JSONDecodeError:
         print("'users.json' file corrupted. Aborting")
+        exit(0)
 
     # Log in
     logged_in = False
@@ -266,7 +268,7 @@ while True:
     print("-----------------------------")
     print("What would you like to do?")
     print("1. Create user")
-    print("2. Enquire user")
+    print("2. Inquire user")
     print("3. Modify user")
     print("4. Remove user")
     print("5. Exit")
