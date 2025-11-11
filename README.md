@@ -3,11 +3,11 @@ To-Do List:
 - [x] Add parameter to `input_required()` that indicates if response should be a number in a certain range
 - [x] Prevent user from deleting if only one user is in the list
 - [x] Comments
-- [ ] Search by uuid (maybe)
+- [ ] Fix new user not being appended issue
+- [ ] First and Last name auto capitalization
 - [ ] Colored text
-- [ ] Minimum password complexity requirement
+- [x] Minimum password complexity requirement
 - [ ] CSV Export
 - [x] Password hashing
 - [ ] Encryption and serialization (maybe)
-- [ ] User class (maybe)
 - [ ] Actually testing the code lmao

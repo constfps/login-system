@@ -1,6 +1,7 @@
 import json
 import os
 import uuid
+import re
 from hashlib import sha256
 
 # A red asterisk using ANSI escape codes
@@ -9,9 +10,20 @@ REQUIRED_INDICATOR = "\033[31m*\033[0m"
 
 # Override of the input() function to make it required
 def input_required(
-    prompt: str, disallow_duplicates: bool = False, number: bool = False
+    prompt: str,
+    disallow_duplicates: bool = False,
+    number: bool = False,
+    password_check: bool = False,
 ) -> str:
     while True:
+        if password_check:
+            print("""Requirements:
+- Minimum of 8 in length
+- At least 1 lowercase letter
+- At least 1 uppercase letter
+- At least 1 digit
+- At least 1 symbol (!@#$%?)
+- No spaces""")
         answer = input(REQUIRED_INDICATOR + prompt).strip()
 
         # Check if answer is empty
@@ -33,6 +45,23 @@ def input_required(
                     return int(answer)
                 except ValueError:
                     print("Input must be a number")
+            # Check if answer must adhere to minimum password complexity
+            elif password_check:
+                # Construct password requirement with RegEx
+                lowercase = "(?=.*[a-z])"
+                uppercase = "(?=.*[A-Z])"
+                digit = "(?=.*\\d)"
+                special = "(?=.*[!@#$%^&*?])"
+                minimum_length = "[A-Za-z\\d!@#$%?]{8,}"
+                pattern = f"^{lowercase}{uppercase}{
+                    digit}{special}{minimum_length}$"
+
+                # Check if pattern matches with given password
+                match = re.match(pattern, answer)
+                if match:
+                    return answer
+                else:
+                    print("Password is not secure enough.")
             else:
                 return answer
 
@@ -43,7 +72,7 @@ def create_user() -> dict:
     fname = input_required("First Name: ").strip()
     lname = input("Last Name: ").strip()
     username = input_required("Username: ").strip()
-    password = input_required("Password: ").strip()
+    password = input_required("Password: ", password_check=True).strip()
 
     # Open users.json in write mode
     with open("users.json", "w") as file:
@@ -70,7 +99,10 @@ def login(username: str, password: str) -> bool:
         # Iterate over entire list
         for user in list(json.load(file)):
             # If username and password match is found, print greet msg
-            if user.get("username") == username and user.get("password") == sha256(password.encode()).hexdigest():
+            if (
+                user.get("username") == username
+                and user.get("password") == sha256(password.encode()).hexdigest()
+            ):
                 print(
                     (
                         f"Welcome, {user.get("first_name")} {
@@ -105,9 +137,11 @@ def find_user(username: str = None):
                         # If username matches, print all user data
                         if user.get("username") == username:
                             for key in user.keys():
-                                # Formatting label
-                                label = key.replace("_", " ").title()
-                                print(f"{label}: {user.get(key)}")
+                                # To skip over password field
+                                if not key == "password":
+                                    # Formatting label
+                                    label = key.replace("_", " ").title()
+                                    print(f"{label}: {user.get(key)}")
                             break
                     # If user is not found
                     else:
@@ -139,8 +173,7 @@ def modify_user():
             if user:
                 while True:
                     # Print options
-                    options = ["First Name", "Last Name",
-                               "Username", "Password"]
+                    options = ["First Name", "Last Name", "Username", "Password"]
                     for i in range(len(options)):
                         print(f"{i+1}. {options[i]}")
 
@@ -149,7 +182,7 @@ def modify_user():
                         option = int(
                             input("Select a field to modify (Press enter to exit): ")
                         )
-                        options[option-1]
+                        options[option - 1]
                     except ValueError:
                         print("Invalid input.")
                         continue
