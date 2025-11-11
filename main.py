@@ -74,22 +74,32 @@ def create_user() -> dict:
     username = input_required("Username: ").strip()
     password = input_required("Password: ", password_check=True).strip()
 
+    # Package new user as dictionary
+    user = {
+        "first_name": fname,
+        "last_name": lname,
+        "username": username,
+        "password": sha256(password.encode()).hexdigest(),
+        "id": str(uuid.uuid4()),
+    }
+
+    # Import current users list if user.json exists
+    if os.path.exists("users.json"):
+        with open("users.json", "r") as file:
+            users = json.load(file)
+    else:
+        users = []
+
     # Open users.json in write mode
     with open("users.json", "w") as file:
-        # Package data in a dictionary
-        data = {
-            "first_name": fname,
-            "last_name": lname,
-            "username": username,
-            "password": sha256(password.encode()).hexdigest(),
-            "id": str(uuid.uuid4()),
-        }
+        # Append the new user
+        users.append(user)
 
         # Write data into users.json
-        file.write(json.dumps([data], indent=4))
+        file.write(json.dumps(users, indent=4))
 
         # Return dictionary (for logging in)
-        return data
+        return user
 
 
 # Logging in with username and password as arguments
