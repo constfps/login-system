@@ -1,7 +1,7 @@
 import json
 import os
-import uuid
 import re
+import uuid
 from hashlib import sha256
 
 # A red asterisk using ANSI escape codes
@@ -11,19 +11,21 @@ REQUIRED_INDICATOR = "\033[31m*\033[0m"
 # Override of the input() function to make it required
 def input_required(
     prompt: str,
-    disallow_duplicates: bool = False,
+    username: bool = False,
     number: bool = False,
     password_check: bool = False,
 ) -> str:
     while True:
         if password_check:
-            print("""Requirements:
+            print(
+                """Requirements:
 - Minimum of 8 in length
 - At least 1 lowercase letter
 - At least 1 uppercase letter
 - At least 1 digit
 - At least 1 symbol (!@#$%?)
-- No spaces""")
+- No spaces"""
+            )
         answer = input(REQUIRED_INDICATOR + prompt).strip()
 
         # Check if answer is empty
@@ -31,14 +33,26 @@ def input_required(
             print("This field is required. Please try again.")
         else:
             # Check if username already exists
-            if disallow_duplicates:
-                with open("users.json", "r") as file:
-                    for user in list(json.load(file)):
-                        if user.get("username") == answer:
-                            print("Username taken.")
-                            break
-                    else:
-                        return answer
+            if username:
+                # Check if theres spaces in username
+                if answer.count(" ") != 0:
+                    print("Username cannot contain spaces.")
+                    continue
+                # Check if users.json exists
+                if os.path.exists("users.json"):
+                    with open("users.json", "r") as file:
+                        # Check if username exists in users list
+                        for user in list(json.load(file)):
+                            # If matching username is found
+                            if user.get("username") == answer:
+                                print("Username taken.")
+                                break
+                        # If username doesnt exist in users list
+                        else:
+                            return answer
+                # If users.json doesnt exist
+                else:
+                    return answer
             # Check if answer needs to be a number
             elif number:
                 try:
@@ -71,7 +85,7 @@ def create_user() -> dict:
     # Ask for info
     fname = input_required("First Name: ").strip().lower().capitalize()
     lname = input("Last Name: ").strip().lower().capitalize()
-    username = input_required("Username: ").strip()
+    username = input_required("Username: ", username=True).strip()
     password = input_required("Password: ", password_check=True).strip()
 
     # Package new user as dictionary
@@ -109,10 +123,7 @@ def login(username: str, password: str) -> bool:
         # Iterate over entire list
         for user in list(json.load(file)):
             # If username and password match is found, print greet msg
-            if (
-                user.get("username") == username
-                and user.get("password") == sha256(password.encode()).hexdigest()
-            ):
+            if (user.get("username") == username and user.get("password") == sha256(password.encode()).hexdigest()):
                 print(
                     (
                         f"Welcome, {user.get("first_name")} {
@@ -185,7 +196,7 @@ def modify_user():
                     # Print options
                     options = ["First Name", "Last Name", "Username", "Password"]
                     for i in range(len(options)):
-                        print(f"{i+1}. {options[i]}")
+                        print(f"{i + 1}. {options[i]}")
 
                     # Ask for input
                     option = input("Select a field to modify (Press enter to exit): ")
@@ -204,7 +215,10 @@ def modify_user():
                             continue
 
                         # Ask user for input to replace current data
-                        replacement = input(f"Enter a {options[option-1].lower()} to replace the current one (press Enter to cancel): ")
+                        replacement = input(
+                            f"Enter a {
+                                options[option - 1].lower()} to replace the current one (press Enter to cancel): "
+                        )
 
                         # If input not empty
                         if replacement:
