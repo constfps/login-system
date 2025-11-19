@@ -4,7 +4,10 @@ To-Do List:
 - [x] Prevent user from deleting if only one user is in the list
 - [x] Comments
 - [x] Fix new user not being appended issue
-- [ ] First and Last name auto capitalization
+- [x] First and Last name auto capitalization
+- [x] Fix exiting modify user not working
+- [x] Fix modify and remove user not properly writing to file
+- [ ] First and Last name must only be alphabetics
 - [ ] Colored text
 - [x] Minimum password complexity requirement
 - [ ] CSV Export

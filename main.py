@@ -69,8 +69,8 @@ def input_required(
 # Creating users
 def create_user() -> dict:
     # Ask for info
-    fname = input_required("First Name: ").strip()
-    lname = input("Last Name: ").strip()
+    fname = input_required("First Name: ").strip().lower().capitalize()
+    lname = input("Last Name: ").strip().lower().capitalize()
     username = input_required("Username: ").strip()
     password = input_required("Password: ", password_check=True).strip()
 
@@ -84,7 +84,7 @@ def create_user() -> dict:
     }
 
     # Import current users list if user.json exists
-    if os.path.exists("users.json"):
+    if os.path.exists("users.json") and os.path.getsize("users.json") != 0:
         with open("users.json", "r") as file:
             users = json.load(file)
     else:
@@ -188,30 +188,28 @@ def modify_user():
                         print(f"{i+1}. {options[i]}")
 
                     # Ask for input
-                    try:
-                        option = int(
-                            input("Select a field to modify (Press enter to exit): ")
-                        )
-                        options[option - 1]
-                    except ValueError:
-                        print("Invalid input.")
-                        continue
-                    except IndexError:
-                        print("Input out of range.")
-                        continue
+                    option = input("Select a field to modify (Press enter to exit): ")
 
                     # If input not empty
                     if option:
+                        # Check if input is valid
+                        try:
+                            option = int(option)
+                            options[option - 1]
+                        except ValueError:
+                            print("Invalid input.")
+                            continue
+                        except IndexError:
+                            print("Input out of range.")
+                            continue
+
                         # Ask user for input to replace current data
-                        replacement = input(
-                            f"Enter a {
-                                options[option-1].lower()} to replace the current one (press Enter to cancel): "
-                        )
+                        replacement = input(f"Enter a {options[option-1].lower()} to replace the current one (press Enter to cancel): ")
 
                         # If input not empty
                         if replacement:
                             # Duplicate user
-                            modified_user = user
+                            modified_user = user.copy()
 
                             # Update user data
                             modified_user.update(
@@ -223,13 +221,18 @@ def modify_user():
                             )
 
                             # Open users.json in read and write mode
-                            with open("users.json", "r+") as file:
+                            with open("users.json", "r") as file:
                                 users = list(json.load(file))
-                                users.remove(user)  # Remove original user
+                            
+                            # Remove original user
+                            users.remove(user)  
 
-                                # Add modified user
-                                users.append(modified_user)
-                                file.write(json.dump(users))  # Write to file
+                            # Add modified user
+                            users.append(modified_user)
+
+                            # Write to file new data
+                            with open("users.json", "w") as file:
+                                file.write(json.dumps(users, indent=4))  
                     # If field input is empty
                     else:
                         break
@@ -247,9 +250,7 @@ def remove_user():
         # Check if there's one user in users list
         with open("users.json", "r") as file:
             if len(list(json.load(file))) <= 1:
-                print(
-                    "1 user remaining in the list. Logout and delete 'users.json' file to delete"
-                )
+                print("1 user remaining in the list. Logout and delete 'users.json' file to delete")
                 break
 
         # Ask for username input
@@ -257,12 +258,17 @@ def remove_user():
         if username:
             # Find user
             user = find_user(username)
+            # If matching user is found
             if user:
-                with open("users.json", "r+") as file:
-                    # Remove user and write to file
+                with open("users.json", "r") as file:
+                    # Remove user
                     users = list(json.load(file))
                     users.remove(user)
-                    file.write(json.dump(users))
+                
+                # Write changes to file
+                with open("users.json", "w") as file:
+                    file.write(json.dumps(users, indent=4))
+
                 print("User successfully removed.")
             # If user not found
             else:
@@ -273,8 +279,8 @@ def remove_user():
 
 
 # Check if users.json file exists
-if not os.path.exists("users.json"):
-    print("'users.json' file not found.")
+if not os.path.exists("users.json") or os.path.getsize("users.json") == 0:
+    print("'users.json' file not found or is empty.")
     # Ask user if they want to make a new user
     response = input("Make a new user? [Y/n]: ")
     if response.lower() == "y" or not response:
