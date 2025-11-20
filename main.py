@@ -2,6 +2,7 @@ import json
 import os
 import re
 import uuid
+import csv
 from hashlib import sha256
 
 # A red asterisk using ANSI escape codes
@@ -17,15 +18,13 @@ def input_required(
 ) -> str:
     while True:
         if password_check:
-            print(
-                """Requirements:
+            print("""Requirements:
 - Minimum of 8 in length
 - At least 1 lowercase letter
 - At least 1 uppercase letter
 - At least 1 digit
 - At least 1 symbol (!@#$%?)
-- No spaces"""
-            )
+- No spaces""")
         answer = input(REQUIRED_INDICATOR + prompt).strip()
 
         # Check if answer is empty
@@ -39,7 +38,7 @@ def input_required(
                     print("Username cannot contain spaces.")
                     continue
                 # Check if users.json exists
-                if os.path.exists("users.json"):
+                if os.path.exists("users.json") and os.path.getsize("users.json") > 0:
                     with open("users.json", "r") as file:
                         # Check if username exists in users list
                         for user in list(json.load(file)):
@@ -124,12 +123,7 @@ def login(username: str, password: str) -> bool:
         for user in list(json.load(file)):
             # If username and password match is found, print greet msg
             if (user.get("username") == username and user.get("password") == sha256(password.encode()).hexdigest()):
-                print(
-                    (
-                        f"Welcome, {user.get("first_name")} {
-                            user.get("last_name")}"
-                    ).strip()
-                )
+                print(f"Welcome, {user.get("first_name")} {user.get("last_name")}".strip())
                 break
         # If none are found, return False
         else:
@@ -145,9 +139,7 @@ def find_user(username: str = None):
     if not username:
         while True:
             # Ask for input
-            username = input(
-                "Enter username to search for (Press enter to exit): "
-            ).strip()
+            username = input("Enter username to search for (Press enter to exit): ").strip()
 
             # If not empty
             if username:
@@ -216,9 +208,7 @@ def modify_user():
 
                         # Ask user for input to replace current data
                         replacement = input(
-                            f"Enter a {
-                                options[option - 1].lower()} to replace the current one (press Enter to cancel): "
-                        )
+                            f"Enter a {options[option - 1].lower()} to replace the current one (press Enter to cancel): ")
 
                         # If input not empty
                         if replacement:
@@ -237,16 +227,16 @@ def modify_user():
                             # Open users.json in read and write mode
                             with open("users.json", "r") as file:
                                 users = list(json.load(file))
-                            
+
                             # Remove original user
-                            users.remove(user)  
+                            users.remove(user)
 
                             # Add modified user
                             users.append(modified_user)
 
                             # Write to file new data
                             with open("users.json", "w") as file:
-                                file.write(json.dumps(users, indent=4))  
+                                file.write(json.dumps(users, indent=4))
                     # If field input is empty
                     else:
                         break
@@ -278,7 +268,7 @@ def remove_user():
                     # Remove user
                     users = list(json.load(file))
                     users.remove(user)
-                
+
                 # Write changes to file
                 with open("users.json", "w") as file:
                     file.write(json.dumps(users, indent=4))
@@ -288,6 +278,84 @@ def remove_user():
             else:
                 print("User not found.")
         # If username input is empty
+        else:
+            break
+
+
+def csv_handler():
+    while True:
+        # Print options
+        options = ["import", "export"]
+        for i, option in enumerate(options):
+            print(f"{i + 1}. {option.capitalize()} CSV File")
+
+        # Ask user for selection
+        selected = input("Select an option (press enter to exit): ")
+
+        # If input is not empty
+        if selected:
+            # Validate input
+            try:
+                selected = int(selected)
+                options[selected - 1]
+            except ValueError:
+                print("Invalid input. Please try again")
+                continue
+            except IndexError:
+                print("Input out of range. Please try again")
+                continue
+            temp = " to" if selected == 2 else ""
+            file_path = input(f"Please enter the path of the CSV file to {options[selected - 2]}{temp} (press enter to exit): ")
+
+            if file_path:
+                # Check if entered path ends with .csv
+                if not file_path.endswith(".csv"):
+                    print("Not a CSV File")
+                    continue
+                # Check if file doesnt exists when import is selected
+                elif selected == 1 and not os.path.exists(file_path) and not os.path.isfile(file_path):
+                    print("CSV File does not exist.")
+                    continue
+                # Check if file exists when export is selected
+                elif selected == 2 and os.path.exists(file_path) and os.path.isfile(file_path):
+                    print("CSV File already exists.")
+                    continue
+                # Import CSV
+                elif selected == 1:
+                    # Get current users list
+                    with open("users.json", "r") as file:
+                        users = list(json.load(file))
+                    # Open CSV file
+                    with open(file_path, "r", newline="") as file:
+                        # Initialize reader
+                        reader = csv.DictReader(file)
+
+                        # Iterate over every user in CSV
+                        for user in reader:
+                            # Add user to current users list if not there yet
+                            if user not in users:
+                                users.append(user)
+                    # Write new users list
+                    with open("users.json", "w") as file:
+                        file.write(json.dumps(users))
+                # Export CSV file
+                elif selected == 2:
+                    # Get current users list
+                    with open("users.json", "r") as file:
+                        users = list(json.load(file))
+
+                    # Get keys list
+                    fields = users[0].keys()
+                    # Open CSV file
+                    with open(file_path, "w", newline='') as file:
+                        # Initialize writer
+                        writer = csv.DictWriter(file, fieldnames=fields)
+
+                        # Write keys and user data
+                        writer.writeheader()
+                        writer.writerows(users)
+                    break
+        # If input is empty
         else:
             break
 
@@ -334,13 +402,14 @@ while True:
     print("2. Inquire user")
     print("3. Modify user")
     print("4. Remove user")
-    print("5. Exit")
+    print("5. Import/Export CSV")
+    print("6. Exit")
 
     # Ask for input
     selected = input_required("Answer: ", number=True)
 
     # Do operation according to input
-    if selected == 5:
+    if selected == 6:
         break
     elif selected == 1:
         print("Enter the new user's information")
@@ -351,5 +420,7 @@ while True:
         modify_user()
     elif selected == 4:
         remove_user()
+    elif selected == 5:
+        csv_handler()
     else:
         print("Input out of range.")
