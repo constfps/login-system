@@ -7,10 +7,10 @@ To-Do List:
 - [x] First and Last name auto capitalization
 - [x] Fix exiting modify user not working
 - [x] Fix modify and remove user not properly writing to file
-- [ ] First and Last name must only be alphabetics
+- [x] First and Last name must only be alphabetics
 - [ ] Colored text
 - [x] Minimum password complexity requirement
-- [ ] CSV Export
+- [x] CSV Export
 - [x] Password hashing
 - [ ] Encryption and serialization (maybe)
 - [ ] Actually testing the code lmao

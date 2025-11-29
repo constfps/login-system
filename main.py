@@ -14,17 +14,9 @@ def input_required(
     prompt: str,
     username: bool = False,
     number: bool = False,
-    password_check: bool = False,
+    alphabetic: bool = False
 ) -> str:
     while True:
-        if password_check:
-            print("""Requirements:
-- Minimum of 8 in length
-- At least 1 lowercase letter
-- At least 1 uppercase letter
-- At least 1 digit
-- At least 1 symbol (!@#$%?)
-- No spaces""")
         answer = input(REQUIRED_INDICATOR + prompt).strip()
 
         # Check if answer is empty
@@ -41,11 +33,8 @@ def input_required(
                 if os.path.exists("users.json") and os.path.getsize("users.json") > 0:
                     with open("users.json", "r") as file:
                         # Check if username exists in users list
-                        for user in list(json.load(file)):
-                            # If matching username is found
-                            if user.get("username") == answer:
-                                print("Username taken.")
-                                break
+                        if answer in map(lambda x: x.get("username"), list(json.load(file))):
+                            print("Username taken")
                         # If username doesnt exist in users list
                         else:
                             return answer
@@ -58,26 +47,49 @@ def input_required(
                     return int(answer)
                 except ValueError:
                     print("Input must be a number")
+            elif alphabetic and not answer.isalpha():
+                print("Name must be alphabetics only")
             # Check if answer must adhere to minimum password complexity
-            elif password_check:
-                # Construct password requirement with RegEx
-                lowercase = "(?=.*[a-z])"
-                uppercase = "(?=.*[A-Z])"
-                digit = "(?=.*\\d)"
-                special = "(?=.*[!@#$%^&*?])"
-                minimum_length = "[A-Za-z\\d!@#$%?]{8,}"
-                pattern = f"^{lowercase}{uppercase}{
-                    digit}{special}{minimum_length}$"
-
-                # Check if pattern matches with given password
-                match = re.match(pattern, answer)
-                if match:
-                    return answer
-                else:
-                    print("Password is not secure enough.")
             else:
                 return answer
 
+
+def input_password(prompt: str, optional: bool = False):
+    while True:
+        # Print password requirements
+        print("""Requirements:
+- Minimum of 8 in length
+- At least 1 lowercase letter
+- At least 1 uppercase letter
+- At least 1 digit
+- At least 1 symbol (!@#$%?)
+- No spaces""")
+
+        password = input(REQUIRED_INDICATOR + prompt).strip()
+
+        # Check if password is empty when required
+        if password:
+            if not optional:
+                print("This field is required.")
+                continue
+        else:
+            return password
+
+        # Construct password requirement with RegEx
+        lowercase = "(?=.*[a-z])"
+        uppercase = "(?=.*[A-Z])"
+        digit = "(?=.*\\d)"
+        special = "(?=.*[!@#$%^&*?])"
+        minimum_length = "[A-Za-z\\d!@#$%?]{8,}"
+        pattern = f"^{lowercase}{uppercase}{
+            digit}{special}{minimum_length}$"
+
+        # Check if pattern matches with given password
+        match = re.match(pattern, password)
+        if match:
+            return password
+        else:
+            print("Password is not secure enough.")
 
 # Creating users
 def create_user() -> dict:
@@ -85,7 +97,7 @@ def create_user() -> dict:
     fname = input_required("First Name: ").strip().lower().capitalize()
     lname = input("Last Name: ").strip().lower().capitalize()
     username = input_required("Username: ", username=True).strip()
-    password = input_required("Password: ", password_check=True).strip()
+    password = input_password("Password: ").strip()
 
     # Package new user as dictionary
     user = {
@@ -207,8 +219,12 @@ def modify_user():
                             continue
 
                         # Ask user for input to replace current data
-                        replacement = input(
-                            f"Enter a {options[option - 1].lower()} to replace the current one (press Enter to cancel): ")
+                        if option == 4:
+                            replacement = input_password(f"Enter a {options[option - 1].lower()} to replace the current one (press Enter to cancel): ", optional=True)
+                            # Get password hash
+                            replacement = sha256(replacement.encode()).hexdigest()
+                        else:
+                            replacement = input(f"Enter a {options[option - 1].lower()} to replace the current one (press Enter to cancel): ")
 
                         # If input not empty
                         if replacement:
