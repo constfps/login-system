@@ -68,12 +68,13 @@ def input_password(prompt: str, optional: bool = False):
         password = input(REQUIRED_INDICATOR + prompt).strip()
 
         # Check if password is empty when required
-        if password:
-            if not optional:
+        if not password:
+            if optional:
+                return password
+            else:
                 print("This field is required.")
                 continue
-        else:
-            return password
+            
 
         # Construct password requirement with RegEx
         lowercase = "(?=.*[a-z])"
