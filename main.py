@@ -49,7 +49,6 @@ def input_required(
                     print("Input must be a number")
             elif alphabetic and not answer.isalpha():
                 print("Name must be alphabetics only")
-            # Check if answer must adhere to minimum password complexity
             else:
                 return answer
 
@@ -74,7 +73,6 @@ def input_password(prompt: str, optional: bool = False):
             else:
                 print("This field is required.")
                 continue
-            
 
         # Construct password requirement with RegEx
         lowercase = "(?=.*[a-z])"
@@ -91,6 +89,7 @@ def input_password(prompt: str, optional: bool = False):
             return password
         else:
             print("Password is not secure enough.")
+
 
 # Creating users
 def create_user() -> dict:
@@ -322,7 +321,7 @@ def csv_handler():
                 print("Input out of range. Please try again")
                 continue
             temp = " to" if selected == 2 else ""
-            file_path = input(f"Please enter the path of the CSV file to {options[selected - 2]}{temp} (press enter to exit): ")
+            file_path = input(f"Please enter the path of the CSV file to {options[selected - 1]}{temp} (press enter to exit): ")
 
             if file_path:
                 # Check if entered path ends with .csv
@@ -339,6 +338,9 @@ def csv_handler():
                     continue
                 # Import CSV
                 elif selected == 1:
+                    # Keeping track of user count
+                    count = 0
+
                     # Get current users list
                     with open("users.json", "r") as file:
                         users = list(json.load(file))
@@ -352,9 +354,13 @@ def csv_handler():
                             # Add user to current users list if not there yet
                             if user not in users:
                                 users.append(user)
+                                count += 1
                     # Write new users list
                     with open("users.json", "w") as file:
-                        file.write(json.dumps(users))
+                        file.write(json.dumps(users, indent=4))
+
+                    # Print feedback
+                    print(f"Successfully imported {count} users")
                 # Export CSV file
                 elif selected == 2:
                     # Get current users list
@@ -371,6 +377,7 @@ def csv_handler():
                         # Write keys and user data
                         writer.writeheader()
                         writer.writerows(users)
+                    print("Successfully exported current users")
                     break
         # If input is empty
         else:
