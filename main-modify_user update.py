@@ -244,11 +244,12 @@ def modify_user():
                             with open("users.json", "r") as file:
                                 users = list(json.load(file))
 
-                            # Remove original user
-                            users.remove(user)
+                            #replaces the user in place
+                            index = users.index(user)
+                            users[index] = modified_user
 
-                            # Add modified user
-                            users.append(modified_user)
+                            #updates the users reference
+                            user = modified_user
 
                             # Write to file new data
                             with open("users.json", "w") as file:
