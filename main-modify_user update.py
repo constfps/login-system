@@ -223,6 +223,23 @@ def modify_user():
                             replacement = input_password(f"Enter a {options[option - 1].lower()} to replace the current one (press Enter to cancel): ", optional=True)
                             # Get password hash
                             replacement = sha256(replacement.encode()).hexdigest()
+                        if option == 3:
+                            while True:
+                                replacement = input(f"Enter a {options[option - 1].lower()} to replace the current one (press Enter to cancel): ")
+                                if not replacement:
+                                    break
+                                if replacement.count(" ") != 0:
+                                    print("Username cannot contain spaces.")
+                                    continue
+                                # Check if users.json exists
+                                if os.path.exists("users.json") and os.path.getsize("users.json") > 0:
+                                    with open("users.json", "r") as file:
+                                        # Check if username exists in users list
+                                        if replacement in map(lambda x: x.get("username"), list(json.load(file))):
+                                            print("Username taken")
+                                            continue
+                                        else:
+                                            break
                         else:
                             replacement = input(f"Enter a {options[option - 1].lower()} to replace the current one (press Enter to cancel): ")
 
@@ -244,12 +261,11 @@ def modify_user():
                             with open("users.json", "r") as file:
                                 users = list(json.load(file))
 
-                            #replaces the user in place
-                            index = users.index(user)
-                            users[index] = modified_user
+                            # Remove original user
+                            users.remove(user)
 
-                            #updates the users reference
-                            user = modified_user
+                            # Add modified user
+                            users.append(modified_user)
 
                             # Write to file new data
                             with open("users.json", "w") as file:
